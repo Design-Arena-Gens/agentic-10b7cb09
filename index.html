@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth's Rotation - Educational Illustration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #1a2340 0%, #0a0e1a 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100vh;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            max-width: 300px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .info-panel h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #64b5f6;
+        }
+
+        .info-panel p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 15px;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .day-side {
+            background: linear-gradient(135deg, #ffd700, #ffeb3b);
+        }
+
+        .night-side {
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .info-panel, .legend {
+            animation: fadeIn 1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <h1>Earth's Rotation</h1>
+        <p><strong>Axial Tilt:</strong> 23.5°</p>
+        <p><strong>Direction:</strong> West to East (Counterclockwise from North Pole)</p>
+        <p><strong>Period:</strong> 24 hours</p>
+        <p>The Earth rotates on its axis, creating day and night cycles. The tilt causes seasons throughout the year.</p>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color day-side"></div>
+            <span>Day Side (Sunlit)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color night-side"></div>
+            <span>Night Side (Shadow)</span>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Star field
+        const stars = [];
+        for (let i = 0; i < 200; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 1.5,
+                alpha: Math.random() * 0.5 + 0.3
+            });
+        }
+
+        let rotationAngle = 0;
+        const earthRadius = Math.min(canvas.width, canvas.height) * 0.2;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const tiltAngle = 23.5 * Math.PI / 180;
+
+        function drawStars() {
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                ctx.fill();
+            });
+        }
+
+        function drawEarth() {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(tiltAngle);
+
+            // Earth sphere with gradient
+            const earthGradient = ctx.createRadialGradient(
+                -earthRadius * 0.3, -earthRadius * 0.3, earthRadius * 0.1,
+                0, 0, earthRadius
+            );
+
+            // Day side (left) to night side (right) based on rotation
+            const dayColor1 = '#4fc3f7';
+            const dayColor2 = '#2196f3';
+            const nightColor1 = '#1a237e';
+            const nightColor2 = '#0d1b3e';
+
+            earthGradient.addColorStop(0, dayColor1);
+            earthGradient.addColorStop(0.5, dayColor2);
+            earthGradient.addColorStop(0.7, nightColor1);
+            earthGradient.addColorStop(1, nightColor2);
+
+            ctx.beginPath();
+            ctx.arc(0, 0, earthRadius, 0, Math.PI * 2);
+            ctx.fillStyle = earthGradient;
+            ctx.fill();
+
+            // Day/Night terminator line
+            ctx.save();
+            ctx.rotate(rotationAngle);
+
+            // Night side overlay (right half)
+            ctx.beginPath();
+            ctx.arc(0, 0, earthRadius, -Math.PI / 2, Math.PI / 2);
+            ctx.fillStyle = 'rgba(10, 20, 50, 0.7)';
+            ctx.fill();
+
+            // Glow on day side
+            const dayGlow = ctx.createRadialGradient(
+                -earthRadius * 0.5, 0, 0,
+                -earthRadius * 0.5, 0, earthRadius * 0.8
+            );
+            dayGlow.addColorStop(0, 'rgba(255, 223, 0, 0.3)');
+            dayGlow.addColorStop(1, 'rgba(255, 223, 0, 0)');
+            ctx.beginPath();
+            ctx.arc(0, 0, earthRadius, Math.PI / 2, -Math.PI / 2);
+            ctx.fillStyle = dayGlow;
+            ctx.fill();
+
+            // Continental outlines (simplified)
+            ctx.strokeStyle = 'rgba(76, 175, 80, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
+
+            // Draw simplified continents that rotate
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI / 3) + rotationAngle;
+                const x = Math.cos(angle) * earthRadius * 0.6;
+                const y = Math.sin(angle) * earthRadius * 0.4;
+
+                ctx.beginPath();
+                ctx.ellipse(x, y, earthRadius * 0.2, earthRadius * 0.15, angle, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.restore();
+
+            // Outer glow
+            const outerGlow = ctx.createRadialGradient(0, 0, earthRadius, 0, 0, earthRadius * 1.3);
+            outerGlow.addColorStop(0, 'rgba(100, 181, 246, 0.3)');
+            outerGlow.addColorStop(1, 'rgba(100, 181, 246, 0)');
+            ctx.beginPath();
+            ctx.arc(0, 0, earthRadius * 1.3, 0, Math.PI * 2);
+            ctx.fillStyle = outerGlow;
+            ctx.fill();
+
+            // Earth border
+            ctx.beginPath();
+            ctx.arc(0, 0, earthRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawRotationAxis() {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(tiltAngle);
+
+            // Axis line
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, -earthRadius * 1.5);
+            ctx.lineTo(0, earthRadius * 1.5);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // North pole marker
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(0, -earthRadius * 1.5, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // South pole marker
+            ctx.beginPath();
+            ctx.arc(0, earthRadius * 1.5, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Labels
+            ctx.font = 'bold 16px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.fillText('N', 0, -earthRadius * 1.6);
+            ctx.fillText('S', 0, earthRadius * 1.7);
+
+            ctx.restore();
+        }
+
+        function drawRotationArrows() {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(tiltAngle);
+
+            // Circular rotation arrows
+            const arrowRadius = earthRadius * 1.15;
+            const arrowCount = 6;
+
+            for (let i = 0; i < arrowCount; i++) {
+                const angle = (i / arrowCount) * Math.PI * 2 + rotationAngle * 0.5;
+                const x = Math.cos(angle) * arrowRadius;
+                const y = Math.sin(angle) * arrowRadius;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle + Math.PI / 2);
+
+                // Arrow
+                ctx.strokeStyle = '#64b5f6';
+                ctx.fillStyle = '#64b5f6';
+                ctx.lineWidth = 3;
+
+                ctx.beginPath();
+                ctx.moveTo(0, -10);
+                ctx.lineTo(0, 10);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, 10);
+                ctx.lineTo(-6, 4);
+                ctx.lineTo(6, 4);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            ctx.restore();
+
+            // "West to East" label
+            ctx.save();
+            ctx.translate(centerX, centerY - earthRadius * 1.7);
+            ctx.font = 'bold 18px Arial';
+            ctx.fillStyle = '#64b5f6';
+            ctx.textAlign = 'center';
+            ctx.fillText('↻ West to East', 0, 0);
+            ctx.restore();
+        }
+
+        function drawTiltIndicator() {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            // Reference line (vertical)
+            ctx.strokeStyle = 'rgba(255, 193, 7, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(earthRadius * 1.4, -earthRadius * 1.5);
+            ctx.lineTo(earthRadius * 1.4, earthRadius * 1.5);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Tilt arc
+            ctx.strokeStyle = '#ffc107';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(earthRadius * 1.4, 0, earthRadius * 0.5, -Math.PI / 2, -Math.PI / 2 + tiltAngle, false);
+            ctx.stroke();
+
+            // Tilt angle label
+            ctx.font = 'bold 20px Arial';
+            ctx.fillStyle = '#ffc107';
+            ctx.textAlign = 'center';
+            ctx.fillText('23.5°', earthRadius * 1.4 + earthRadius * 0.7, -earthRadius * 0.3);
+
+            ctx.restore();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawStars();
+            drawEarth();
+            drawRotationAxis();
+            drawRotationArrows();
+            drawTiltIndicator();
+
+            rotationAngle += 0.005;
+
+            requestAnimationFrame(animate);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        animate();
+    </script>
+</body>
+</html>
